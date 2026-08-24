@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.DS_Store
+
+# Runtime-generated observation images (keep the directory via .gitkeep)
+outputs/*.png
+
+# Generated demonstration dataset (regenerate with `python -m dataset.generate_dataset`)
+data/demonstrations/*
+!data/demonstrations/.gitkeep

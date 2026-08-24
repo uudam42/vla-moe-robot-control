@@ -1,0 +1,1 @@
+NOTICE: Vendored from mujoco_menagerie (https://github.com/google-deepmind/mujoco_menagerie), franka_emika_panda, Apache License 2.0. See LICENSE in this directory.

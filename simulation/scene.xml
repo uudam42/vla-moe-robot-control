@@ -1,0 +1,50 @@
+<mujoco model="panda_manipulation_scene">
+  <!-- Step 2 scene: ground, a table the robot is mounted on, a Franka
+       Panda-style 7-DoF arm + gripper (vendored in assets/franka_panda/,
+       see assets/franka_panda/NOTICE.txt), a red cube on the table, a
+       fixed camera, and lighting. -->
+
+  <include file="assets/franka_panda/panda.xml"/>
+
+  <statistic center="0.3 0 0.5" extent="1.2"/>
+
+  <visual>
+    <headlight ambient="0.4 0.4 0.4" diffuse="0.6 0.6 0.6"/>
+  </visual>
+
+  <asset>
+    <texture name="grid" type="2d" builtin="checker" rgb1="0.2 0.2 0.2"
+              rgb2="0.3 0.3 0.3" width="512" height="512"/>
+    <material name="grid_mat" texture="grid" texrepeat="6 6" reflectance="0.1"/>
+    <material name="red_mat" rgba="0.85 0.1 0.1 1"/>
+    <material name="table_mat" rgba="0.55 0.4 0.28 1"/>
+  </asset>
+
+  <worldbody>
+    <!-- Lighting: bright enough that the robot and red cube are clearly
+         visible, in addition to the "top" light included from panda.xml. -->
+    <light name="key_light" pos="0.5 -0.5 1.8" dir="-0.2 0.2 -1" diffuse="0.8 0.8 0.8"
+           specular="0.2 0.2 0.2" castshadow="true"/>
+    <light name="fill_light" pos="-0.5 0.5 1.4" dir="0.3 -0.3 -1"
+           diffuse="0.35 0.35 0.35" castshadow="false"/>
+
+    <!-- Ground plane (floor beneath the table pedestal) -->
+    <geom name="ground" type="plane" size="1.5 1.5 0.05" material="grid_mat"/>
+
+    <!-- Table / work surface: robot is bolted to its top (see link0 pos in
+         assets/franka_panda/panda.xml), and the red cube rests on it. -->
+    <geom name="table" type="box" pos="0.35 0 0.2" size="0.45 0.45 0.2"
+          material="table_mat"/>
+
+    <!-- Movable red cube, sized to fit within the gripper's ~0.08m opening. -->
+    <body name="red_cube" pos="0.45 0 0.42">
+      <freejoint name="red_cube_joint"/>
+      <geom name="red_cube_geom" type="box" size="0.02 0.02 0.02"
+            material="red_mat" mass="0.05" friction="1.0 0.02 0.0002"/>
+    </body>
+
+    <!-- Fixed camera framing the robot, table, and red cube workspace -->
+    <camera name="main_camera" pos="1.7 -1.5 1.4"
+            xyaxes="0.7311 0.6823 0.0000 -0.2611 0.2798 0.9239"/>
+  </worldbody>
+</mujoco>
