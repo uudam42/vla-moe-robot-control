@@ -1090,14 +1090,17 @@ SimulationEnvironment  knows MuJoCo only
 ### Environment (documented, not assumed)
 
 ```text
-OS:                 macOS (Darwin), Apple Silicon
-Python:             3.14 (repo .venv) / ROS2 packages target 3.10-3.12
-ROS2 distribution:  NOT INSTALLED in this development environment
-                     (no `ros2` CLI, no `rclpy`, no /opt/ros) -- see
-                     "Limitations" below. The ROS2 package/nodes/launch
-                     file are written correctly against the standard
-                     rclpy/ROS2 Jazzy-or-Humble API but have not been
-                     built or executed here.
+Implementation machine:  macOS (Darwin), Apple Silicon, Python 3.14 (.venv) --
+                          no ROS2 distribution installed here (no `ros2` CLI,
+                          no `rclpy`, no /opt/ros); the ROS2 package/nodes/
+                          launch file were written against the standard
+                          rclpy/ROS2 API but could not be built or run here.
+
+Verification machine:    Ubuntu 24.04, ROS2 Jazzy, Python 3.12, CUDA available --
+                          colcon build + `pytest -m ros2` + full suite (354
+                          passed, 0 skipped) confirmed for real. See
+                          "Limitations" below for exactly what that does and
+                          does not cover.
 ```
 
 ### `RobotBackend`: the abstraction (`robot_backend/`)
@@ -1262,23 +1265,32 @@ observation sync/staleness:       tests/test_ros_sync.py                        
 episode reset ordering:           tests/test_ros_episode_manager.py                  (10 tests)
 VLA policy node control loop:     tests/test_ros_policy_node_core.py                 (6 tests)
 MuJoCo bridge node control loop:  tests/test_ros_bridge_node_core.py                 (8 tests)
-real ROS2 node files (rclpy):     tests/test_ros2_node_files.py     -- SKIPPED here, see below
+real ROS2 node files (rclpy):     tests/test_ros2_node_files.py                      (3 tests)
 ```
 
 All of the above except the last file are plain pytest, no ROS2 required.
 `test_ros2_node_files.py` is marked `@pytest.mark.ros2` and gated by
-`pytest.importorskip("rclpy")`:
+`pytest.importorskip("rclpy")` -- self-skips cleanly (not an error) on a
+machine without ROS2, and actually runs on one with it:
 
 ```bash
-pytest                    # runs everything; the ros2 file self-skips cleanly (no error)
-pytest -m "not ros2"      # explicit pure-Python suite
-pytest -m ros2             # ROS2 integration suite -- needs a real ROS2 install; skipped here
+python3 -m pytest                    # everything; ros2 file self-skips cleanly if rclpy is absent
+python3 -m pytest -m "not ros2"      # explicit pure-Python suite
+python3 -m pytest -m ros2             # ROS2 integration suite -- needs a real ROS2 install
 ```
 
-**pytest: 351 passed, 1 skipped** (272 Step 1-8 baseline + 79 new
-pure-Python Step 9 tests; zero regressions in any prior step). The 1
-skip is `tests/test_ros2_node_files.py`, cleanly self-skipped via
-`pytest.importorskip("rclpy")` -- not an error.
+(Use `python3 -m pytest`, not bare `pytest` -- on a `--system-site-packages`
+venv sitting alongside a ROS2 install, a system-installed `pytest` binary
+can shadow the venv's one on `PATH` and silently run under the wrong
+interpreter, e.g. missing `torch`.)
+
+**pytest: 354 passed, 0 skipped on Ubuntu 24.04 / ROS2 Jazzy / Python
+3.12 / CUDA** (272 Step 1-8 baseline + 82 new Step 9 tests -- 79
+pure-Python + the 3 ROS2-marked ones -- all of which actually ran; zero
+regressions in any prior step, and zero platform-specific failures vs.
+the macOS/MPS implementation environment, where the same suite reports
+**351 passed, 1 skipped** since `rclpy` isn't installed there (the 3
+ROS2 tests collapse into a single module-level skip)).
 
 ### Measured latency: direct vs. `RobotBackend`-mediated (5 episodes, seed 42, MPS)
 
@@ -1299,37 +1311,53 @@ here; see "Limitations" (`outputs/evaluation/ros2/direct_vs_backend_latency.json
 
 ### Limitations (README "Avoid overclaiming")
 
-**No ROS2 distribution is installed in this development environment** (no
-`ros2` CLI, no `rclpy`). This is a real, load-bearing constraint on what
-could actually be verified this milestone:
+**This ROS2 package was originally implemented on macOS with no ROS2
+distribution installed** (no `ros2` CLI, no `rclpy`) -- the package,
+both nodes, and the `ros2`-marked tests were written correctly against
+the public rclpy API from careful reading, but could not be executed at
+implementation time. It has since been **built and executed for real** on
+a separate Ubuntu machine (Ubuntu 24.04, ROS2 Jazzy, Python 3.12, CUDA
+available):
 
 ```text
-Verified by execution:      RobotBackend / MuJoCoBackend / FakeRobotBackend,
-                             direct-vs-backend equivalence, all
-                             ros_integration/ logic (serialization,
-                             validation, watchdog, sync, episode reset)
+Verified by execution (macOS, no ROS2):
+    RobotBackend / MuJoCoBackend / FakeRobotBackend, direct-vs-backend
+    equivalence, all ros_integration/ logic (serialization, validation,
+    watchdog, sync, episode reset) -- 351 pure-Python tests.
 
-Written, NOT executed:      the ros2_ws/ ROS2 package itself (colcon build),
-                             both rclpy nodes, the launch file, the
-                             multi-step ROS2 smoke rollout, ANY live
-                             latency/throughput/message-drop measurement,
-                             the +/-3cm ROS2 closed-loop evaluation
+Verified by execution (Ubuntu 24.04 / ROS2 Jazzy / Python 3.12, later):
+    colcon build --symlink-install (both packages, incl. custom message/
+    service generation); `pytest -m ros2` -- both node files import
+    cleanly (mujoco_bridge_node / vla_policy_node, no MuJoCo-isolation
+    violations) AND the multi-step ROS2 smoke rollout (README "Multi-step
+    Integration Test") actually runs: bridge publishes sensor topics ->
+    policy node synchronizes/predicts/publishes VLARobotAction -> bridge
+    validates/executes -- real message flow, not simulated. Full suite
+    (`python3 -m pytest -q`) -- 354 passed, 0 skipped (351 + the 3 ROS2
+    tests that self-skip when rclpy is absent) -- confirms no regressions
+    across platforms (macOS/MPS vs. Linux/CUDA) either.
+
+Still NOT executed/measured:
+    a live `ros2 launch` demo run (frame capture, single-episode log);
+    ANY live ROS2 message-transport latency/throughput/drop-count
+    measurement; the +/-3cm ROS2 closed-loop success evaluation.
 ```
 
 The "direct vs ROS2" comparison the milestone asks for
-(`outputs/evaluation/ros2/direct_vs_backend_latency.json`) is therefore
-**partial and honestly labeled**: it measures direct-`SimulationEnvironment`
-vs. `RobotBackend`-mediated latency (real, measured) but NOT ROS2
-message-transport latency, throughput, or dropped/stale-message counts
-(not measured -- no ROS2 runtime available; fabricating these numbers
-would defeat the point of measuring anything). The ROS2 nodes/launch file
-are believed correct against the public rclpy API from careful reading,
-not proven correct by running them.
+(`outputs/evaluation/ros2/direct_vs_backend_latency.json`) therefore still
+only covers direct-`SimulationEnvironment` vs. `RobotBackend`-mediated
+latency (real, measured, on macOS) -- ROS2 message-transport latency,
+throughput, and dropped/stale-message counts remain unmeasured
+(fabricating them would defeat the point of measuring anything). The gap
+narrowed from "written, never run" to "built and running, full latency
+benchmark not yet captured."
 
 This is a **ROS2-based simulated deployment architecture with backend
-abstraction and runtime safety checks** -- not a real-time-certified or
-production-ready physical-robot safety system, and not yet validated
-end-to-end on a real ROS2 install.
+abstraction and runtime safety checks, now confirmed to build and run on
+a real ROS2 install** -- still not a real-time-certified or
+production-ready physical-robot safety system, and the live performance
+benchmark (latency/throughput/drops under real ROS2 transport) and the
+ROS2 closed-loop success evaluation remain open.
 
 ### What Step 9 adds, and what's still needed before real hardware
 
