@@ -11,8 +11,6 @@ synchronizes them (``ros_integration.sync``), and publishes a
 Requires this repository's root on ``PYTHONPATH`` (README "Packaging").
 """
 
-import time
-
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
@@ -110,9 +108,14 @@ class VLAPolicyNode(Node):
         if self.core.on_instruction(msg.data):
             self.get_logger().info(f"instruction updated: {msg.data!r}")
 
+    def _now(self) -> float:
+        """Seconds, same clock/epoch as message header stamps -- see
+        mujoco_bridge_node.py::MuJoCoBridgeNode._now() for why this must
+        NOT be time.monotonic()."""
+        return self.get_clock().now().nanoseconds / 1e9
+
     def _on_control_tick(self) -> None:
-        now = time.monotonic()
-        action = self.core.tick(now)
+        action = self.core.tick(self._now())
         if action is None:
             self.get_logger().warn(
                 "observation stale or not yet synchronized -- skipping policy tick", throttle_duration_sec=2.0

@@ -14,8 +14,6 @@ Requires this repository's root on ``PYTHONPATH`` (README "Packaging") so
 logic -- only ROS2 transport wiring around ``MuJoCoBridgeNodeCore``.
 """
 
-import time
-
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
@@ -104,14 +102,21 @@ class MuJoCoBridgeNode(Node):
         state_msg.position = state_fields["position"]
         self.state_pub.publish(state_msg)
 
+    def _now(self) -> float:
+        """Seconds, same clock/epoch as message header stamps (README
+        "Timestamp instrumentation"). NOT time.monotonic() -- that clock's
+        origin (system boot) is unrelated to the ROS clock's origin (epoch
+        by default), so comparing the two silently produces meaningless,
+        wildly-off deltas instead of a clean timeout/staleness check."""
+        return self.get_clock().now().nanoseconds / 1e9
+
     def _on_action(self, msg: VLARobotAction) -> None:
-        now = time.monotonic()
-        result = self.core.on_action_received(list(msg.joint_targets), msg.gripper_target, now)
+        result = self.core.on_action_received(list(msg.joint_targets), msg.gripper_target, self._now())
         if not result.valid:
             self.get_logger().warn(f"action rejected: {result.reason}")
 
     def _execute_tick(self) -> None:
-        _, timed_out = self.core.tick(time.monotonic())
+        _, timed_out = self.core.tick(self._now())
         if timed_out:
             self.get_logger().warn("command watchdog timeout -- holding last safe action")
 
