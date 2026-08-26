@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>vla_robot_control</name>
+  <version>0.1.0</version>
+  <description>
+    Step 9 ROS2 deployment of the VLA robot control research stack: a
+    MuJoCo bridge node and a VLA policy node communicating over standard
+    and custom ROS2 messages, built on a RobotBackend abstraction so the
+    same nodes are structurally ready for a future real-robot backend.
+  </description>
+  <maintainer email="agudanmu@gmail.com">uudam</maintainer>
+  <license>Apache-2.0</license>
+
+  <depend>rclpy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>builtin_interfaces</depend>
+  <depend>vla_robot_control_msgs</depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

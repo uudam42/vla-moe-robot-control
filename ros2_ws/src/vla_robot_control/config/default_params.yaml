@@ -1,0 +1,23 @@
+mujoco_bridge_node:
+  ros__parameters:
+    camera_topic: /vla/camera/image
+    state_topic: /vla/robot/state
+    action_topic: /vla/action
+    publish_rate_hz: 30.0
+    command_timeout_sec: 0.5
+    max_joint_delta: 0.5
+
+vla_policy_node:
+  ros__parameters:
+    policy_type: temporal
+    device: cpu
+    instruction: "Pick up the red cube."
+    control_frequency_hz: 30.0
+    camera_topic: /vla/camera/image
+    state_topic: /vla/robot/state
+    instruction_topic: /task_instruction
+    action_topic: /vla/action
+    sync_max_delta_sec: 0.1
+    stale_timeout_sec: 0.5
+    # checkpoint: intentionally NOT defaulted here -- must be supplied
+    # via launch argument (README "Do not hardcode local absolute paths").

@@ -2,3 +2,6 @@ mujoco
 numpy
 Pillow
 pytest
+torch
+torchvision
+transformers

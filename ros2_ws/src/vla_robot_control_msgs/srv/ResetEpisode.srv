@@ -1,0 +1,7 @@
+# README "Reset API": /reset_episode is a SERVICE (not a topic) so the
+# caller gets a synchronous acknowledgement that reset actually completed
+# (backend.reset() -> policy.reset() -> metrics reset, in that order) --
+# see ros_integration/episode_manager.py for the ordering this wraps.
+---
+bool success
+string message

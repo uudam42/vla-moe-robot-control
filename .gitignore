@@ -10,3 +10,30 @@ outputs/*.png
 # Generated demonstration dataset (regenerate with `python -m dataset.generate_dataset`)
 data/demonstrations/*
 !data/demonstrations/.gitkeep
+
+# Generated DAgger collection rounds (regenerate with `python -m simulation.collect_dagger_data`)
+data/dagger/*
+!data/dagger/.gitkeep
+
+# Trained checkpoints and training run outputs (regenerate with `python -m training.train`)
+checkpoints/*
+!checkpoints/.gitkeep
+outputs/training/*
+!outputs/training/.gitkeep
+
+# Local HuggingFace/torch pretrained-weight cache, if ever created inside the repo
+.cache/
+
+# Step 5 closed-loop evaluation artifacts (regenerate with `python -m simulation.evaluate_vla_closed_loop`)
+outputs/evaluation/*
+!outputs/evaluation/.gitkeep
+outputs/vla_demo_frames/
+outputs/moe_vla_demo_frames/
+outputs/temporal_vla_demo_frames/
+outputs/dagger_vla_demo_frames/
+
+# colcon build artifacts, if the ROS2 workspace is ever built here
+# (regenerate with `colcon build --symlink-install` inside ros2_ws/)
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
