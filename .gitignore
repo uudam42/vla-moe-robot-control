@@ -37,3 +37,8 @@ outputs/dagger_vla_demo_frames/
 ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/
+
+# Step 10 recorded episode archives (frames/video can be large; regenerate
+# with `python -m demo.run --record` or any runtime.run_episode caller)
+outputs/episodes/*
+!outputs/episodes/.gitkeep

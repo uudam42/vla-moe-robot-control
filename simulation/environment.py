@@ -138,6 +138,16 @@ class SimulationEnvironment:
             cube_qpos_adr : cube_qpos_adr + 7
         ]
 
+    def get_joint_range(self) -> np.ndarray:
+        """The 7 arm joints' authoritative position limits, shape ``(7, 2)``
+        (``[min, max]`` radians per joint), as compiled from the scene XML.
+        The single source of truth for joint bounds -- ``step()`` clamps to
+        this already; callers that need to know the bounds themselves
+        (e.g. a safety supervisor) should read this rather than
+        hardcoding a second copy (Step 10 "Do not duplicate authoritative
+        MuJoCo joint-limit constants")."""
+        return self._arm_joint_range.copy()
+
     def get_robot_state(self) -> RobotState:
         """Extract structured proprioception using named joint/site IDs.
 

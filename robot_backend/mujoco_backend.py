@@ -73,3 +73,11 @@ class MuJoCoBackend(RobotBackend):
 
     def get_end_effector_jacobian(self) -> tuple:
         return self.env.get_end_effector_jacobian()
+
+    def get_joint_range(self) -> np.ndarray:
+        """Authoritative per-joint position bounds, shape ``(7, 2)``.
+        NOT privileged in the same sense as the methods above (it's a
+        static robot spec, not scene state) -- a ``SafetySupervisor`` may
+        read this even though it isn't part of the core ``RobotBackend``
+        ABC, since not every backend can supply it (e.g. ``FakeRobotBackend``)."""
+        return self.env.get_joint_range()
